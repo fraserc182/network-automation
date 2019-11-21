@@ -9,11 +9,11 @@ There are comments in each script explaining parts that need extra explanations.
 ios_copy.yml
 ============================================
 
-  vars: 
-    compliant_ios_version: 15.2.4E8
-    ios_md5: 2284cbaf62484a2689880b6a4eff7629
-    file_name: c2960x-universalk9-mz.152-4.E8.bin
-    scp_user: ansible_user
+    vars: 
+        compliant_ios_version: 15.2.4E8
+        ios_md5: 2284cbaf62484a2689880b6a4eff7629
+        file_name: c2960x-universalk9-mz.152-4.E8.bin
+        scp_user: ansible_user
 
 Set the ios version to whatever image you want to upgrade to, the md5 hash can be obtained from the cisco website.
 The file_name variable should be the file name, not the file path.
