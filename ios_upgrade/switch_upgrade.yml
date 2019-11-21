@@ -1,0 +1,42 @@
+---
+- name: UPGRADE SWITCH FIRMWARE
+  hosts: all
+  gather_facts: no
+
+  vars:
+    compliant_ios_version: 15.2.4E8
+    ios_md5: 2284cbaf62484a2689880b6a4eff7629 ## md5 checksum
+
+  tasks:
+    - name: GATHER SWITCH FACTS
+      ios_facts:
+
+    - name: UPGRADE IOS IMAGE IF NOT COMPLIANT
+      block:
+
+      - name: SET BOOT SYSTEM FLASH
+        ios_command:
+          commands:
+            - boot system flash:c2960x-universalk9-mz.152-4.E8.bin
+
+      - name: REBOOT SWITCH
+        ios_command:
+          commands:
+            - "reload\n"
+
+      - name: WAIT FOR SWITCH TO RETURN
+        wait_for:
+          host: "{{inventory_hostname}}"
+          port: 22
+          delay: 300
+        delegate_to: localhost
+
+      when: ansible_net_version != compliant_ios_version
+
+    - name: GATHER SWITCH FACTS FOR VERIFICATION
+      ios_facts:
+
+    - name: ASSERT THAT THE IOS VERSION IS CORRECT
+      assert:
+        that:
+          - compliant_ios_version == ansible_net_version    
