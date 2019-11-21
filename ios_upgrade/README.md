@@ -15,8 +15,12 @@ vars:
     file_name: c2960x-universalk9-mz.152-4.E8.bin
     scp_user: ansible_user
 ```
+
+
 Set the ios version to whatever image you want to upgrade to, the md5 hash can be obtained from the cisco website.
+
 The file_name variable should be the file name, not the file path.
+
 scp_user should be set to a user that has rights to ssh onto the device. I have used the same user that the script is running under, which is set in your vars file.
 
 In order of execution this script does the following:
