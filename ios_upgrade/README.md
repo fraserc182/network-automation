@@ -8,7 +8,7 @@ There are comments in each script explaining parts that need extra explanations.
 
 ios_copy.yml
 ============================================
-```Ansible
+```ansible
 vars: 
     compliant_ios_version: 15.2.4E8
     ios_md5: 2284cbaf62484a2689880b6a4eff7629
