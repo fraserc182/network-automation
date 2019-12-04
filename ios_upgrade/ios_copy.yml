@@ -8,11 +8,11 @@
   hosts: all
   gather_facts: no
 
-  vars:
+#! Set these variables and ensure they are correct before running
+  vars: 
     compliant_ios_version: 15.2.4E8
     ios_md5: 2284cbaf62484a2689880b6a4eff7629
     file_name: c2960x-universalk9-mz.152-4.E8.bin
-    scp_user: ansible.user
 
   tasks:
 
@@ -38,20 +38,19 @@
       ios_command:
         commands: show run
       register: showrun
-      ##  print the output for human verification
-    - debug: 
-        msg: "show flash: '{{ shflash.stdout[0] }}'"
-      ## print the output for human verification
-    - debug: 
-        msg: "{% if '{{ file_name }}' in shflash.stdout[0] %} IOS Image is present on '{{ inventory_hostname }}' {% else %} beginning image transfer to  '{{inventory_hostname}}' {% endif %}"
-      
-      ## This block will only execute if the file is already present in flash memory
-    - name: VERIFY MD5 IF FILE IS PRESESNT
+
+    - #debug: ## print the output for human verification if required for debugging
+        #msg: "show flash: '{{ shflash.stdout[0] }}'"
+ 
+      ## This task only runs if the file is already present in flash
+    - name: VERIFY MD5 IF FILE IS PRESENT
       block: 
 
       - name: CHECK MD5
         ios_command:
           commands: verify /md5 flash:{{ file_name }} {{ ios_md5 }}        
+        vars:
+          ansible_comand_timeout: 300
 
       when: "file_name in shflash.stdout[0]" 
 
@@ -60,29 +59,31 @@
 
       - name: ENABLE SCP
         ios_command:
-          commands: 
-            - conf t
+          commands:
+            - conf t 
             - ip scp server enable
             - exit
 
       when: "'ip scp server enable' not in showrun.stdout[0]"
-      
-      ## this block will only run if the file IS NOT present in flash memory
-    - name: COPY FILE & VERIFY MD5 IF NOT PRESENT
-      block:
-        ## copies file and names it, sshpass is used to preserve already entered ssh creds using -k
-      - name: COPY IMAGE TO FLASH 
-        command: sshpass -p {{ ansible_ssh_pass }} scp ../../static_files/{{ file_name }} {{ scp_user }}@{{ inventory_hostname }}:/{{ file_name }}
 
+    - name: COPY FILE & VERIFY MD5 IF NOT PRESENT
+      block: 
+      - name: COPY IMAGE TO FLASH ## copies file and names it, sshpass is used to preserve already entered ssh creds using -k
+        ## ensure file actually exists in specified location
+        command: sshpass -p {{ ansible_ssh_pass }} scp ../../static_files/{{ file_name }} ansible.user@{{ inventory_hostname }}:/{{ file_name }}
+        
       - name: CHECK MD5
         ios_command:
           commands: verify /md5 flash:{{ file_name }} {{ ios_md5 }}
+        vars:
+          ansible_comand_timeout: 300
 
-      - name: DISABLE SCP
-        ios_command:
-          commands:
-            - conf t
-            - no ip scp server enable
-            - exit
-
-      when: "file_name not in shflash.stdout[0]"
+      when: "file_name not in shflash.stdout[0]" ## the above tasks will only run if the file is NOT present
+      
+      ## always disable scp at the end of playbook
+    - name: DISABLE SCP
+      ios_command:
+        commands:
+          - conf t
+          - no ip scp server enable
+          - exit

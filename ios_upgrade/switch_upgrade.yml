@@ -1,11 +1,14 @@
+## PLaybook to upgade switch 
+
 ---
 - name: UPGRADE SWITCH FIRMWARE
   hosts: all
   gather_facts: no
-
+  
+  #! ensure variables are correct before running playbook  
   vars:
     compliant_ios_version: 15.2.4E8
-    ios_md5: 2284cbaf62484a2689880b6a4eff7629 ## md5 checksum
+    ios_md5: 2284cbaf62484a2689880b6a4eff7629
 
   tasks:
     - name: GATHER SWITCH FACTS
@@ -17,18 +20,21 @@
       - name: SET BOOT SYSTEM FLASH
         ios_command:
           commands:
+            - conf t
             - boot system flash:c2960x-universalk9-mz.152-4.E8.bin
+            - exit
+            - write mem ## write mem is required to stop reload command asking to save changes
 
       - name: REBOOT SWITCH
         ios_command:
           commands:
-            - "reload\n"
-
+            - "reload in 1\ny" ## reloads in 1 minute, then confirms the reload
+          
       - name: WAIT FOR SWITCH TO RETURN
         wait_for:
           host: "{{inventory_hostname}}"
           port: 22
-          delay: 300
+          delay: 600 ## 10 minutes, adjust to whatever is required
         delegate_to: localhost
 
       when: ansible_net_version != compliant_ios_version
