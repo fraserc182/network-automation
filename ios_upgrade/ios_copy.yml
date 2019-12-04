@@ -42,6 +42,9 @@
     - #debug: ## print the output for human verification if required for debugging
         #msg: "show flash: '{{ shflash.stdout[0] }}'"
  
+   # - debug: ## print the output for human verification
+    #    msg: "{% if  file_name in shflash.stdout[0] %} IOS Image is present on '{{ inventory_hostname }}' {% else %} beginning image transfer to  '{{inventory_hostname}}' {% endif %}"
+
       ## This task only runs if the file is already present in flash
     - name: VERIFY MD5 IF FILE IS PRESENT
       block: 
