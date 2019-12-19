@@ -1,6 +1,6 @@
 
 ## import required modules
-from pyntc import ntc_device as NTC
+from netmiko import ConnectHandler
 from ntc_templates.parse import parse_output
 from getpass import getpass
 
@@ -8,19 +8,22 @@ from getpass import getpass
 switches = open("./hosts_files/edge_switches.txt").read().splitlines()
 
 ## set user and ask for ssh password
-ssh_user = "USERNAME"
+ssh_user = "ansible.user_ro"
 ssh_pass = getpass()
 
 ## first loops through switches and runs show int status and gathers facts
 for x in switches:
-    switch = NTC(host=(x), username=(ssh_user), password=(ssh_pass), device_type='cisco_ios_ssh')
-    show_int = switch.show('show int status')
-    get_facts = switch.facts
-    query_hostname = get_facts.get("hostname", "")
-    print(query_hostname)
-    print("")
-    ## parses output into json arry so it can be worked with easier
+    switch = ConnectHandler(device_type='cisco_ios', host=(x), username=(ssh_user), password=(ssh_pass))
+    show_int = switch.send_command("show int status")
+    ## parses output so it can be worked with easier
     show_int_parsed = parse_output(platform="cisco_ios", command="show int status", data=show_int)
+    ## pull hostname from running config
+    sw_hostname = switch.send_command("show run | in hostname")
+    sw_hostname = sw_hostname.split()
+    hostname = sw_hostname[1]
+    print(hostname)
+    print("")
+    
     ## loops through parsed interface output and checks for interfaces on vlan 12
     for i in show_int_parsed:
         if i['vlan'] == '12':
