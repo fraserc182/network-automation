@@ -1,33 +1,75 @@
+#!/usr/bin/env python
+"""
+Use processes and Netmiko to connect to each of the devices. Execute
+'show version' on each device. Use a queue to pass the output back to the parent process.
+Record the amount of time required to do this.
+"""
+from multiprocessing import Process, Queue
 
-## import required modules
+from datetime import datetime
 from netmiko import ConnectHandler
 from ntc_templates.parse import parse_output
-from getpass import getpass
+from my_devices import lab_sw as devices
+import sys
+import time
 
-## read the hosts text file
-switches = open("./hosts_files/edge_switches.txt").read().splitlines()
 
-## set user and ask for ssh password
-ssh_user = "ansible.user_ro"
-ssh_pass = getpass()
+def show_cisco_commands(a_device, output_q):
+    """
+    Use Netmiko to execute commands. Use a queue to pass the data back to
+    the main process.
+    """
+    output_dict = {}
+    remote_conn = ConnectHandler(**a_device)
 
-## first loops through switches and runs show int status and gathers facts
-for x in switches:
-    switch = ConnectHandler(device_type='cisco_ios', host=(x), username=(ssh_user), password=(ssh_pass))
-    show_int = switch.send_command("show int status")
-    ## parses output so it can be worked with easier
-    show_int_parsed = parse_output(platform="cisco_ios", command="show int status", data=show_int)
-    ## pull hostname from running config
-    sw_hostname = switch.send_command("show run | in hostname")
-    sw_hostname = sw_hostname.split()
-    hostname = sw_hostname[1]
-    print(hostname)
+    hostname = remote_conn.base_prompt ## this line pulls the hostname from the device
+
+    ## these are the commands being sent to the devices
+    sh_commands = remote_conn.send_command("show int status")
+    sh_commands_parsed = parse_output(platform="cisco_ios", command="show int status", data=sh_commands)
+
+
+    print(("=" * 80) + "\n")
+    print((hostname))
     print("")
-    
-    ## loops through parsed interface output and checks for interfaces on vlan 12
-    for i in show_int_parsed:
+
+    ## this for loop looks for the information that is in in sh_commands_parsed variables
+    for i in sh_commands_parsed:
         if i['vlan'] == '12':
             intf = (i['port'])
             vlans = (i['vlan'])
             status = (i['status'])
-            print('Found port '+intf, 'on VLAN ' +vlans, '& Port is: ' +status)
+            print('Found port '+intf, 'on VLAN ' +vlans, "\n" 'Current Port status is: ' +status, 
+            "\n" 'Port will be shutdown')
+            print("")
+
+    print("")
+    print(("=" * 80) + "\n")
+    output_q.put(output_dict)
+
+
+def main():
+    """
+    Use processes and Netmiko to connect to each of the devices. Execute
+    'show version' on each device. Use a queue to pass the output back to the parent process.
+    Record the amount of time required to do this.
+    """
+    start_time = datetime.now()
+    output_q = Queue(maxsize=35)
+
+    procs = []
+    for a_device in devices:
+        my_proc = Process(target=show_cisco_commands, args=(a_device, output_q))
+        my_proc.start()
+        procs.append(my_proc)
+
+    # Make sure all processes have finished
+    for a_proc in procs:
+        a_proc.join()
+
+
+    print("\nElapsed time: " + str(datetime.now() - start_time))
+
+
+if __name__ == "__main__":
+    main()
