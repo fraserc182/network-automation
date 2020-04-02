@@ -39,8 +39,7 @@ def show_cisco_commands(a_device, output_q):
             intf = (i['port'])
             vlans = (i['vlan'])
             status = (i['status'])
-            print('Found port '+intf, 'on VLAN ' +vlans, "\n" 'Current Port status is: ' +status, 
-            "\n" 'Port will be shutdown')
+            print('Found port '+intf, 'on VLAN ' +vlans, "\n" 'Current Port status is: ' +status)
             print("")
 
     print("")
