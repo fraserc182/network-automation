@@ -7,8 +7,8 @@ ssh_pass = getpass("Enter ssh password: ")
 
 lab_sw = {
     "device_type": "cisco_ios",
-    "host": "test_lab_switch.blah",
-    "username": "admin",
+    "host": "172.26.111.248",
+    "username": "fraseradmin",
     "password": ssh_pass,
 }
 
