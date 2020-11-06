@@ -75,7 +75,11 @@ def show_cisco_commands(a_device, output_q):
     new_list = []
 
     for i in sh_commands_parsed:
-        new_list.append(i['vlan'])
+
+        if i['vlan'] in user_vlans:
+            new_list.append(i['vlan'])
+        else:
+            pass
 
     print(hostname, + Counter(new_list))
         
